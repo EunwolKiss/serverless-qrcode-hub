@@ -868,45 +868,176 @@ function createExpiredHtml(mapping) {
 }
 
 function createWechatHtml(mapping) {
+  // 获取数据，防止为空报错
   const title = escapeHtml(mapping.name || '微信群二维码');
   const announcementHtml = sanitizeRichText(mapping.announcementHtml || mapping.announcement_html || '', DEFAULT_WECHAT_ANNOUNCEMENT_HTML);
   const hintHtml = sanitizeRichText(mapping.hintHtml || mapping.hint_html || '', DEFAULT_WECHAT_HINT_HTML);
+  const qrData = escapeHtml(mapping.qrCodeData || '');
+
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .card { width: min(100%, 420px); padding: 28px 24px; text-align: center; background: #fff; border-radius: 18px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); }
-    .icon { width: 40px; height: 40px; margin-bottom: 12px; }
-    h1 { margin: 0 0 8px; font-size: 24px; color: #111827; }
-    .rich-text { color: #6b7280; line-height: 1.7; }
-    .rich-text :where(p, div, ul, ol) { margin: 10px 0 0; }
-    .rich-text :where(p, div, ul, ol):first-child { margin-top: 0; }
-    .rich-text :where(ul, ol) { padding-left: 1.4em; text-align: left; }
-    .rich-text :where(li + li) { margin-top: 0.35em; }
-    .rich-text a { color: #2563eb; text-decoration: underline; }
-    img.qr { width: 100%; max-width: 260px; margin: 18px auto 0; border-radius: 16px; display: block; background: #fff; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0f172a; }
-      .card { background: #111827; box-shadow: none; }
-      h1 { color: #f8fafc; }
-      .rich-text { color: #cbd5e1; }
-      .rich-text a { color: #93c5fd; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>${title}</title>
+    <style>
+        :root {
+            --ios-bg: #F2F2F7; /* iOS 系统背景灰 */
+            --card-bg: rgba(255, 255, 255, 0.85); /* 半透明白 */
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --accent-color: #007AFF; /* Apple Blue */
+            --shadow-light: 0 8px 30px rgba(0, 0, 0, 0.06);
+            --radius-large: 24px;
+            --radius-small: 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --ios-bg: #000000;
+                --card-bg: rgba(28, 28, 30, 0.85); /* 半透明深灰 */
+                --text-primary: #FFFFFF;
+                --text-secondary: #98989D;
+                --shadow-light: 0 8px 30px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: var(--ios-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-large);
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .header-section {
+            margin-bottom: 24px;
+        }
+
+        .icon-wrapper {
+            width: 56px;
+            height: 56px;
+            background: #fff;
+            border-radius: 16px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .icon-wrapper img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .rich-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        .rich-text p { margin: 0; }
+        .rich-text a { color: var(--accent-color); text-decoration: none; }
+
+        .qr-container {
+            position: relative;
+            background: #fff;
+            padding: 16px;
+            border-radius: var(--radius-small);
+            margin-top: 24px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+
+        img.qr {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .action-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ios-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 999px;
+            margin-top: 16px;
+            opacity: 0.8;
+        }
+
+        .footer-hint {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <img class="icon" src="/wechat.svg" alt="WeChat">
-    <h1>${title}</h1>
-    <div class="rich-text">${announcementHtml}</div>
-    <img class="qr" src="${escapeHtml(mapping.qrCodeData || '')}" alt="微信群二维码">
-    <div class="rich-text">${hintHtml}</div>
-  </div>
+    <div class="container">
+        <!-- 主卡片 -->
+        <div class="glass-card">
+            <div class="header-section">
+                <div class="icon-wrapper">
+                    <img src="/wechat.svg" alt="WeChat">
+                </div>
+                <h1>${title}</h1>
+                <div class="rich-text">${announcementHtml}</div>
+            </div>
+
+            <div class="qr-container">
+                <img class="qr" src="${qrData}" alt="QR Code">
+            </div>
+
+            <div class="action-pill">
+                长按识别图中二维码
+            </div>
+        </div>
+
+        <!-- 底部提示 -->
+        <div class="footer-hint">
+            ${hintHtml}
+        </div>
+    </div>
 </body>
 </html>`;
 }
