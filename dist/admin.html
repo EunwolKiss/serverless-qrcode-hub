@@ -558,7 +558,15 @@
     const DEFAULT_ANNOUNCEMENT_HTML = '<p>请使用迅雷APP扫码保存</p>';
     const DEFAULT_HINT_HTML = '<p>二维码失效请联系作者更新</p>';
     const RICH_EDITOR_IDS = ['create-announcement-editor', 'create-hint-editor', 'edit-announcement-editor', 'edit-hint-editor'];
-
+// 生成随机短链，默认6位 字母+数字
+function getRandomShortPath(len = 6) {
+  const dict = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let res = '';
+  for(let i = 0; i < len; i++) {
+    res += dict[Math.floor(Math.random() * dict.length)];
+  }
+  return res;
+}
     function cacheElements() {
       const ids = [
         'alertContainer', 'theme-toggle-btn', 'theme-toggle-path', 'logout-btn', 'metric-total', 'metric-active', 'metric-expiring',
@@ -1731,6 +1739,8 @@
       resetCreateForm();
       syncControls();
       await refreshData();
+       // 页面刷新自动填入随机短链
+  elements['create-path'].value = getRandomShortPath();
     }
 
     document.addEventListener('DOMContentLoaded', init);
