@@ -708,8 +708,7 @@ function getRandomShortPath(len = 6) {
         return fallback;
       }
       const normalized = normalizeRichTextHtml(editor.innerHTML);
-      const fixStr = normalized.replace(/&amp;/g, '&');
-      return fixStr || fallback;
+      return normalized || fallback;
     }
 
     function restoreSelection(range) {
