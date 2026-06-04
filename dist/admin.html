@@ -1337,7 +1337,7 @@ function getRandomShortPath(len = 6) {
 
     function resetCreateForm() {
       elements['create-name'].value = '';
-      elements['create-path'].value = '';
+      elements['create-path'].value = getRandomShortPath(6);
       elements['create-target'].value = '';
       elements['create-expiry'].value = '';
       elements['create-enabled'].checked = true;
